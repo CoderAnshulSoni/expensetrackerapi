@@ -8,38 +8,43 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.sql.Date;
+import java.util.List;
 import java.util.Optional;
 
 @Service
 public class ExpenseServiceImpl implements ExpenseService{
 
     @Autowired
+    private UserService userService;
+
+    @Autowired
     private ExpenseRepository expenseRepo;
 
     @Override
     public Page<Expense> getAllExpenses(Pageable page) {
-        return expenseRepo.findAll(page);
+        return expenseRepo.findByUserId(userService.getLoggedInUser().getId(), page);
     }
 
     @Override
     public Expense getExpenseById(Long id) {
-        Optional<Expense> expense = expenseRepo.findById(id);
+        Optional<Expense> expense = expenseRepo.findByUserIdAndId(userService.getLoggedInUser().getId(), id);
 
         if(expense.isPresent()){
             return expense.get();
         }
-
-        // throw new RuntimeException("Expense is not found for the Id" + id);
         throw new ResourceNotFoundException("Expense is not found for the Id" + id);
     }
 
     @Override
     public void deleteExpenseById(Long id){
-        expenseRepo.deleteById(id);
+        Expense expense = getExpenseById(id);
+        expenseRepo.delete(expense);
     }
 
     @Override
     public Expense saveExpenseDetails(Expense expense){
+        expense.setUser(userService.getLoggedInUser());
         return expenseRepo.save(expense);
     }
 
@@ -55,5 +60,29 @@ public class ExpenseServiceImpl implements ExpenseService{
         oldExpense.setDate(expense.getDate() != null ? expense.getDate() : oldExpense.getDate());
 
         return expenseRepo.save(oldExpense);
+    }
+
+    @Override
+    public Page<Expense> readByCategory(String category, Pageable page) {
+        return expenseRepo.findByUserIdAndCategory(userService.getLoggedInUser().getId(),category, page);
+    }
+
+    @Override
+    public List<Expense> readByName(String keyword, Pageable page) {
+        return expenseRepo.findByUserIdAndNameContaining(userService.getLoggedInUser().getId(),keyword, page).toList();
+    }
+
+    @Override
+    public List<Expense> readByDate(Date startDate, Date endDaTe, Pageable page) {
+
+        if(startDate == null){
+            startDate = new Date(0);
+        }
+        if(endDaTe == null){
+            endDaTe = new Date(System.currentTimeMillis());
+        }
+        Page<Expense> pages = expenseRepo.findByUserIdAndDateBetween(userService.getLoggedInUser().getId(), startDate, endDaTe, page);
+
+        return pages.toList();
     }
 }
