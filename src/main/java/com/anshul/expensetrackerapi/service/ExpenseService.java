@@ -1,6 +1,7 @@
 package com.anshul.expensetrackerapi.service;
 
 import com.anshul.expensetrackerapi.Entity.Expense;
+import com.anshul.expensetrackerapi.dto.ExpenseDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -11,20 +12,20 @@ import java.util.List;
 @Service
 public interface ExpenseService {
 
-    Page<Expense> getAllExpenses(Pageable page);
+    List<ExpenseDTO> getAllExpenses(Pageable page);
 
-    Expense getExpenseById(Long id);
+    ExpenseDTO getExpenseById(String expenseId);
 
-    void deleteExpenseById(Long id);
+    void deleteExpenseById(String expenseId);
 
-    Expense saveExpenseDetails(Expense expense);
+    ExpenseDTO saveExpenseDetails(ExpenseDTO expense);
 
-    Expense updateExpenseDetails(Long id, Expense expense);
+    ExpenseDTO updateExpenseDetails(String expenseId, ExpenseDTO expenseDTO);
 
-    Page<Expense> readByCategory(String category, Pageable page);
+    List<ExpenseDTO> readByCategory(String category, Pageable page);
 
-    List<Expense> readByName(String keyword, Pageable page);
+    List<ExpenseDTO> readByName(String keyword, Pageable page);
 
-    List<Expense> readByDate(Date startDate, Date endDaTe, Pageable page);
+    List<ExpenseDTO> readByDate(Date startDate, Date endDaTe, Pageable page);
 
 }
