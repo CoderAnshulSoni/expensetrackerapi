@@ -1,6 +1,5 @@
 package com.anshul.expensetrackerapi.dto;
 
-import com.anshul.expensetrackerapi.io.CategoryResponse;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

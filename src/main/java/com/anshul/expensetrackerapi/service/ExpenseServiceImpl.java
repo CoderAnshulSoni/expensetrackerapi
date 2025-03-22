@@ -2,13 +2,12 @@ package com.anshul.expensetrackerapi.service;
 
 import com.anshul.expensetrackerapi.Entity.Category;
 import com.anshul.expensetrackerapi.Entity.Expense;
-import com.anshul.expensetrackerapi.dto.CategoryDTO;
 import com.anshul.expensetrackerapi.dto.ExpenseDTO;
 import com.anshul.expensetrackerapi.exception.ResourceNotFoundException;
+import com.anshul.expensetrackerapi.mappers.ExpenseMapper;
 import com.anshul.expensetrackerapi.repository.CategoryRepository;
 import com.anshul.expensetrackerapi.repository.ExpenseRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -30,16 +29,19 @@ public class ExpenseServiceImpl implements ExpenseService{
     @Autowired
     private CategoryRepository categoryRepository;
 
+    @Autowired
+    private ExpenseMapper expenseMapper;
+
     @Override
     public List<ExpenseDTO> getAllExpenses(Pageable page) {
         List<Expense> listOfExpense = expenseRepo.findByUserId(userService.getLoggedInUser().getId(), page).toList();
-        return listOfExpense.stream().map(this::mapToExpenseDTO).collect(Collectors.toList());
+        return listOfExpense.stream().map(expense -> expenseMapper.mapToExpenseDTO(expense)).collect(Collectors.toList());
     }
 
     @Override
     public ExpenseDTO getExpenseById(String expenseId) {
         Expense exsistingExpense = getExpenseEntity(expenseId);
-        return mapToExpenseDTO(exsistingExpense);
+        return expenseMapper.mapToExpenseDTO(exsistingExpense);
     }
 
     private Expense getExpenseEntity(String expenseId) {
@@ -65,41 +67,11 @@ public class ExpenseServiceImpl implements ExpenseService{
             throw new ResourceNotFoundException("Category is not found for the Id" + expenseDTO.getCategoryId());
         }
         expenseDTO.setExpenseId(UUID.randomUUID().toString());
-        Expense expense = mapToExpense(expenseDTO);
+        Expense expense = expenseMapper.mapToExpense(expenseDTO);
         expense.setCategory(optionalCategory.get());
         expense.setUser(userService.getLoggedInUser());
         expense = expenseRepo.save(expense);
-        return mapToExpenseDTO(expense);
-    }
-
-    private ExpenseDTO mapToExpenseDTO(Expense expense) {
-        return ExpenseDTO.builder()
-                .name(expense.getName())
-                .expenseId(expense.getExpenseId())
-                .description(expense.getDescription())
-                .amount(expense.getAmount())
-                .date(expense.getDate())
-                .createdAt(expense.getCreatedAt())
-                .updatedAt(expense.getUpdatedAt())
-                .categoryDTO(mapToCategoryDTO(expense.getCategory()))
-                .build();
-    }
-
-    private CategoryDTO mapToCategoryDTO(Category category) {
-        return CategoryDTO.builder()
-                .name(category.getName())
-                .categoryId(category.getCategoryId())
-                .build();
-    }
-
-    private Expense mapToExpense(ExpenseDTO expenseDTO) {
-        return Expense.builder()
-                .expenseId(expenseDTO.getExpenseId())
-                .name(expenseDTO.getName())
-                .description(expenseDTO.getDescription())
-                .date(expenseDTO.getDate())
-                .amount(expenseDTO.getAmount())
-                .build();
+        return expenseMapper.mapToExpenseDTO(expense);
     }
 
     @Override
@@ -119,7 +91,7 @@ public class ExpenseServiceImpl implements ExpenseService{
         oldExpense.setDate(expenseDTO.getDate() != null ? expenseDTO.getDate() : oldExpense.getDate());
 
         Expense newExpense = expenseRepo.save(oldExpense);
-        return mapToExpenseDTO(newExpense);
+        return expenseMapper.mapToExpenseDTO(newExpense);
     }
 
     @Override
@@ -130,13 +102,13 @@ public class ExpenseServiceImpl implements ExpenseService{
             throw new ResourceNotFoundException("Category is not found for the name" + category);
         }
         List<Expense> list = expenseRepo.findByUserIdAndCategoryId(userService.getLoggedInUser().getId(), optionalCategory.get().getId(), page).toList();
-        return list.stream().map(this::mapToExpenseDTO).collect(Collectors.toList());
+        return list.stream().map(expense -> expenseMapper.mapToExpenseDTO(expense)).collect(Collectors.toList());
     }
 
     @Override
     public List<ExpenseDTO> readByName(String keyword, Pageable page) {
         List<Expense> list = expenseRepo.findByUserIdAndNameContaining(userService.getLoggedInUser().getId(),keyword, page).toList();
-        return list.stream().map(this::mapToExpenseDTO).collect(Collectors.toList());
+        return list.stream().map(expense -> expenseMapper.mapToExpenseDTO(expense)).collect(Collectors.toList());
     }
 
     @Override
@@ -150,7 +122,7 @@ public class ExpenseServiceImpl implements ExpenseService{
         }
         List<Expense> listOfExpense = expenseRepo.findByUserIdAndDateBetween(userService.getLoggedInUser().getId(), startDate, endDaTe, page);
 
-        return listOfExpense.stream().map(this::mapToExpenseDTO).collect(Collectors.toList());
+        return listOfExpense.stream().map(expense -> expenseMapper.mapToExpenseDTO(expense)).collect(Collectors.toList());
 
     }
 }

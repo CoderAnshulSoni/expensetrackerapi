@@ -6,6 +6,7 @@ import com.anshul.expensetrackerapi.dto.CategoryDTO;
 import com.anshul.expensetrackerapi.dto.UserDTO;
 import com.anshul.expensetrackerapi.exception.ItemAlreadyExistsException;
 import com.anshul.expensetrackerapi.exception.ResourceNotFoundException;
+import com.anshul.expensetrackerapi.mappers.CategoryMapper;
 import com.anshul.expensetrackerapi.repository.CategoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -24,11 +25,14 @@ public class CategoryServiceImpl implements CategoryService{
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private CategoryMapper categoryMapper;
+
     @Override
     public List<CategoryDTO> getAllCategories() {
         List<Category> list = categoryRepository.findByUserId(userService.getLoggedInUser().getId());
 
-        return list.stream().map(this::mapToCategoryDTO).collect(Collectors.toList());
+        return list.stream().map(category -> categoryMapper.mapToCategoryDTO(category)).collect(Collectors.toList());
     }
 
     @Override
@@ -39,9 +43,11 @@ public class CategoryServiceImpl implements CategoryService{
         }
         else
         {
-            Category category = mapToCategory(categoryDTO);
+            Category category = categoryMapper.mapToCategory(categoryDTO);
+            category.setCategoryId(UUID.randomUUID().toString());
+            category.setUser(userService.getLoggedInUser());
             category = categoryRepository.save(category);
-            return mapToCategoryDTO(category);
+            return categoryMapper.mapToCategoryDTO(category);
         }
     }
 
@@ -52,28 +58,6 @@ public class CategoryServiceImpl implements CategoryService{
             throw new ResourceNotFoundException("Category not found for the id: " + categoryId);
         }
         categoryRepository.delete(optionalCategory.get());
-    }
-
-    private Category mapToCategory(CategoryDTO categoryDTO) {
-        return Category.builder()
-                .name(categoryDTO.getName())
-                .description(categoryDTO.getDescription())
-                .categoryIcon(categoryDTO.getCategoryIcon())
-                .categoryId(UUID.randomUUID().toString())
-                .user(userService.getLoggedInUser())
-                .build();
-    }
-
-    private CategoryDTO mapToCategoryDTO(Category category) {
-        return CategoryDTO.builder()
-                .categoryId(category.getCategoryId())
-                .name(category.getName())
-                .description(category.getDescription())
-                .categoryIcon(category.getCategoryIcon())
-                .createdAt(category.getCreatedAt())
-                .updatedAt(category.getUpdatedAt())
-                .user(mapToUserDTO(category.getUser()))
-                .build();
     }
 
     private UserDTO mapToUserDTO(User user) {
